@@ -7,7 +7,7 @@ setup(
   name = 'sifreader',
   packages = ['sifreader'],
   version = '0.1',
-  install_requires=['numpy']
+  install_requires=['numpy'],
   description = 'A library to read Andor SIF file',
   author = 'Zhenpeng Zhou',
   author_email = 'zhenp3ngzhou@gmail.com',
