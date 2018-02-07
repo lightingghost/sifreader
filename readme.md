@@ -6,5 +6,5 @@ Requirements: numpy
 
 # Install
 ```bash
-pip install sifread
+pip install sifreader
 ```
