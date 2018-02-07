@@ -116,22 +116,6 @@ class SIFFile:
         f.close()
         return data.reshape(self.stacksize, self.width, self.height)
 
-def test():
-    import matplotlib.pyplot as plt
-    sif = SIFFile('0.sif')
-    sif.print_properties()
-    # first = sif.read_block()
-    # plt.figure()
-    # plt.imshow(first)
-    # plt.show()
-
-    all = sif.read_all()
-    img = all[0]
-    plt.figure()
-    plt.imshow(img)
-    plt.show()
-
-test()
 
 
 
