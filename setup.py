@@ -2,7 +2,8 @@
 # Fri Nov 17 2017
 
 
-from distutils.core import setup
+from setuptools import setup
+
 setup(
   name = 'sifreader',
   packages = ['sifreader'],
