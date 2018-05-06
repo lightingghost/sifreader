@@ -4,6 +4,7 @@
 
 
 import os
+import time
 import numpy as np
 
 class SIFFile:
@@ -33,7 +34,7 @@ class SIFFile:
 
     def read_header(self, filepath):
 
-        f = open(filepath,'rb')
+        f = open(filepath, 'rb')
         headerlen = 32
         spool = 0
         i = 0
@@ -46,23 +47,31 @@ class SIFFile:
             elif i == 2:
                 tokens = line.split()
                 self.temperature = float(tokens[5])
+                self.date = time.strftime('%c', time.localtime(float(tokens[4])))
                 self.exposuretime = float(tokens[12])
                 self.cycletime = float(tokens[13])
+                self.accumulations = int(tokens[15])
                 self.readout = 1 / float(tokens[18]) / 1e6
                 self.gain = float(tokens[21])
                 self.vertical_shift_speed = float(tokens[41])
                 self.pre_amp_gain = float(tokens[43])
             elif i == 3:
-                self.model = line
+                self.model = line.decode('utf-8')
             elif i == 5:
-                self.original_filename = line
+                self.original_filename = line.decode('utf-8')
             elif i == 7:
                 tokens = line.split()
                 if len(tokens) >= 1 and tokens[0] == 'Spooled':
                     spool = 1
-            if i > 7 and i < headerlen - 12:
-                if len(line) == 17 \
-                    and line[0:6] == b'65539 ':
+            if i == 9:
+                wavelength_info = line.split()
+                self.center_wavelength = float(wavelength_info[3])
+                self.grating = float(wavelength_info[6])
+                self.grating_blaze = float(wavelength_info[7])
+            if i == 19:
+                self.wavelength_coefficients = [float(num) for num in line.split()][::-1]
+            if 7 < i < headerlen - 12:
+                if len(line) == 17 and line[0:6] == b'65539 ':
                     # and line[7] == b'x01' and line[8] == b'x20' \
                     # and line[9] == b'x00':
                     headerlen = i + 12
@@ -100,13 +109,17 @@ class SIFFile:
         self.datasize = self.width * self.height * 4 * self.stacksize
         self.m_offset = self.filesize - self.datasize - 8
 
+        self.wavelength_axis = np.polyval(self.wavelength_coefficients, np.arange(self.left, self.right + 1))
+        print(self.wavelength_axis)
+        print(self.wavelength_axis.shape)
+
     def read_block(self, num=0):
         f = open(self.filepath, 'rb')
         f.seek(self.m_offset + num * self.width * self.height * 4)
         block = f.read(self.width * self.height * 4)
         data = np.fromstring(block, dtype=np.float32)
         f.close()
-        return data.reshape(self.width, self.height)
+        return data.reshape(self.height, self.width)
 
     def read_all(self):
         f = open(self.filepath, 'rb')
@@ -114,11 +127,4 @@ class SIFFile:
         block = f.read(self.width * self.height * self.stacksize * 4)
         data = np.fromstring(block, dtype=np.float32)
         f.close()
-        return data.reshape(self.stacksize, self.width, self.height)
-
-
-
-
-
-
-
+        return data.reshape(self.stacksize, self.height, self.width)
