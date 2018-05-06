@@ -136,3 +136,52 @@ class SIFFile(object):
         data = np.fromstring(block, dtype=np.float32)
         f.close()
         return data.reshape(self.stacksize, self.height, self.width)
+
+    def as_xarray_dataframe(self, x_axis_quantity='photon_energy'):
+        try:
+            import xarray as xr
+            data = self.read_all()
+            pixel_axis = np.arange(data.shape[1])
+            if x_axis_quantity == 'wavelength':
+                x_axis = self.wavelength_axis
+                x_unit = 'nm'
+                x_name = 'Wavelength'
+            elif x_axis_quantity == 'wavenumber':
+                x_axis = 10e7 / self.wavelength_axis
+                x_unit = 'cm^-1'
+                x_name = 'Wavenumber'
+            elif x_axis_quantity == 'photon_energy':
+                x_axis = 1239.84 / self.wavelength_axis
+                x_unit = 'eV'
+                x_name = 'Photon energy'
+            else:
+                raise RuntimeError('X-axis quantity "{}" not recognized!'.format(x_axis_quantity))
+            if data.shape[0] == 1:
+                # Only one frame
+                data = np.transpose(data[0])
+                xarr = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('pixels', pixel_axis)],
+                                    name='intensity')
+                xarr.attrs['long_name'] = 'Intensity'
+                xarr.attrs['units'] = 'arb. u.'
+                xarr.pixels.attrs['long_name'] = 'y'
+                xarr.pixels.attrs['units'] = 'px'
+                xarr[x_axis_quantity].attrs['long_name'] = x_name
+                xarr[x_axis_quantity].attrs['units'] = x_unit
+            else:
+                # multiple frames
+                frame_axis = np.arange(data.shape[0])
+                # data = np.transpose(data)
+                xarr = xr.DataArray(data, coords=[('frames', frame_axis), ('pixels', pixel_axis),
+                                                  (x_axis_quantity, x_axis)], name='intensity')
+                xarr.attrs['long_name'] = 'Intensity'
+                xarr.attrs['units'] = 'arb. u.'
+                xarr.pixels.attrs['long_name'] = 'y'
+                xarr.pixels.attrs['units'] = 'px'
+                xarr[x_axis_quantity].attrs['long_name'] = x_name
+                xarr[x_axis_quantity].attrs['units'] = x_unit
+                xarr.frames.attrs['long_name'] = 'Frame number'
+
+            return xarr
+
+        except ImportError:
+            raise RuntimeError("xarray package required for this method!")
