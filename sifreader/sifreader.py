@@ -7,30 +7,40 @@ import os
 import time
 import numpy as np
 
-class SIFFile:
+
+class SIFFile(object):
     def __init__(self, filepath):
         self.filepath = filepath
         self.read_header(filepath)
 
-    def print_properties(self):
-        print('Original Filename:\t\t\t\t%s' % self.original_filename)
-        print('Camera Model:\t\t\t\t\t%s' % self.model)
-        print('Temperature:\t\t\t\t\t%d deg. C' % self.temperature)
-        print('Exposure Time:\t\t\t\t\t%f s' % self.exposuretime)
-        print('Cycle Time:\t\t\t\t\t\t%f s' % self.cycletime)
-        print('Pixel Readout Rate:\t\t\t\t%f MHz' % self.readout)
-        print("Horizontal Camera Resolution:\t%i" % self.xres)
-        print("Vertical Camera Resolution:\t\t%i" % self.yres)
-        print("Image width:\t\t\t\t\t%i" % self.width)
-        print("Image Height:\t\t\t\t\t%i"  % self.height)
-        print("Horizontal Binning:\t\t\t\t%i" % self.xbin)
-        print("Vertical Binning:\t\t\t\t%i" % self.ybin)
-        print("EM Gain level:\t\t\t\t\t%f" %  self.gain)
-        print("Vertical Shift Speed:\t\t\t%f s" % self.vertical_shift_speed)
-        print("Pre-Amplifier Gain:\t\t\t\t%f" % self.pre_amp_gain)
-        print("Stacksize: \t\t\t\t\t\t%i" % self.stacksize)
-        print("Filesize: \t\t\t\t\t\t%i" % self.filesize)
-        print("Offset to Image Data: \t\t\t%i" % self.m_offset)
+    def __repr__(self):
+        info = (('Original Filename', self.original_filename),
+                ('Date', self.date),
+                ('Camera Model', self.model),
+                ('Temperature (deg.C)', '{:f}'.format(self.temperature)),
+                ('Exposure Time', '{:f}'.format(self.exposuretime)),
+                ('Cycle Time', '{:f}'.format(self.cycletime)),
+                ('Number of accumulations', '{:d}'.format(self.accumulations)),
+                ('Pixel Readout Rate (MHz)', '{:f}'.format(self.readout)),
+                ("Horizontal Camera Resolution",'{:d}'.format(self.xres)),
+                ("Vertical Camera Resolution", '{:d}'.format(self.yres)),
+                ("Image width", '{:d}'.format(self.width)),
+                ("Image Height", '{:d}'.format(self.height)),
+                ("Horizontal Binning", '{:d}'.format(self.xbin)),
+                ("Vertical Binning", '{:d}'.format(self.ybin)),
+                ("EM Gain level", '{:f}'.format(self.gain)),
+                ("Vertical Shift Speed", '{:f}'.format(self.vertical_shift_speed)),
+                ("Pre-Amplifier Gain", '{:f}'.format(self.pre_amp_gain)),
+                ("Stacksize", '{:d}'.format(self.stacksize)),
+                ("Filesize", '{:d}'.format(self.filesize)),
+                ("Offset to Image Data", '{:f}'.format(self.m_offset)))
+        desc_len = max([len(d) for d in list(zip(*info))[0]]) + 3
+        res = ''
+        for description, value in info:
+            res += ('{:' + str(desc_len) + '}{}\n').format(description + ': ', value)
+
+        res = super().__repr__() + '\n' + res
+        return res
 
     def read_header(self, filepath):
 
