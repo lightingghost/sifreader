@@ -159,28 +159,25 @@ class SIFFile(object):
             if data.shape[0] == 1:
                 # Only one frame
                 data = np.transpose(data[0])
-                xarr = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('pixels', pixel_axis)],
+                data_array = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('pixels', pixel_axis)],
                                     name='intensity')
-                xarr.attrs['long_name'] = 'Intensity'
-                xarr.attrs['units'] = 'arb. u.'
-                xarr.pixels.attrs['long_name'] = 'y'
-                xarr.pixels.attrs['units'] = 'px'
-                xarr[x_axis_quantity].attrs['long_name'] = x_name
-                xarr[x_axis_quantity].attrs['units'] = x_unit
             else:
                 # multiple frames
                 frame_axis = np.arange(data.shape[0])
                 data = np.transpose(data, [2, 1, 0])
-                xarr = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('pixels', pixel_axis), ('frames', frame_axis)], name='intensity')
-                xarr.attrs['long_name'] = 'Intensity'
-                xarr.attrs['units'] = 'arb. u.'
-                xarr.pixels.attrs['long_name'] = 'y'
-                xarr.pixels.attrs['units'] = 'px'
-                xarr[x_axis_quantity].attrs['long_name'] = x_name
-                xarr[x_axis_quantity].attrs['units'] = x_unit
-                xarr.frames.attrs['long_name'] = 'Frame number'
+                data_array = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('pixels', pixel_axis),
+                                                  ('frames', frame_axis)], name='intensity')
+                data_array.frames.attrs['long_name'] = 'Frame number'
 
-            return xarr
+            data_array.attrs['long_name'] = 'Intensity'
+            data_array.attrs['units'] = 'arb. u.'
+            data_array.pixels.attrs['long_name'] = 'y'
+            data_array.pixels.attrs['units'] = 'px'
+            data_array[x_axis_quantity].attrs['long_name'] = x_name
+            data_array[x_axis_quantity].attrs['units'] = x_unit
+            data_array.attrs['sif_metadata'] = str(self)
+
+            return data_array
 
         except ImportError:
             raise RuntimeError("xarray package required for this method!")
