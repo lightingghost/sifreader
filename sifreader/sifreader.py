@@ -110,8 +110,6 @@ class SIFFile:
         self.m_offset = self.filesize - self.datasize - 8
 
         self.wavelength_axis = np.polyval(self.wavelength_coefficients, np.arange(self.left, self.right + 1))
-        print(self.wavelength_axis)
-        print(self.wavelength_axis.shape)
 
     def read_block(self, num=0):
         f = open(self.filepath, 'rb')
