@@ -170,9 +170,8 @@ class SIFFile(object):
             else:
                 # multiple frames
                 frame_axis = np.arange(data.shape[0])
-                # data = np.transpose(data)
-                xarr = xr.DataArray(data, coords=[('frames', frame_axis), ('pixels', pixel_axis),
-                                                  (x_axis_quantity, x_axis)], name='intensity')
+                data = np.transpose(data, [2, 1, 0])
+                xarr = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('pixels', pixel_axis), ('frames', frame_axis)], name='intensity')
                 xarr.attrs['long_name'] = 'Intensity'
                 xarr.attrs['units'] = 'arb. u.'
                 xarr.pixels.attrs['long_name'] = 'y'
