@@ -147,11 +147,13 @@ class SIFFile(object):
                 x_unit = 'nm'
                 x_name = 'Wavelength'
             elif x_axis_quantity == 'wavenumber':
-                x_axis = 10e7 / self.wavelength_axis
+                x_axis = (10e7 / self.wavelength_axis)[::-1]
+                data = np.flip(data, 2)
                 x_unit = 'cm^-1'
                 x_name = 'Wavenumber'
             elif x_axis_quantity == 'photon_energy':
-                x_axis = 1239.84 / self.wavelength_axis
+                x_axis = (1239.84 / self.wavelength_axis)[::-1]
+                data = np.flip(data, 2)
                 x_unit = 'eV'
                 x_name = 'Photon energy'
             else:
