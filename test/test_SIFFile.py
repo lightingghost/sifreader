@@ -48,7 +48,7 @@ class TestSIFFile(TestCase):
     def test_xarray_export_image(self):
         from sifreader.sifreader import SIFFile
         sif_file = SIFFile(os.path.join(file_dir, 'test_image.sif'))
-        array = sif_file.as_xarray_dataframe()
+        array = sif_file.as_xarray()
         assert tuple(['x', 'y']) == array.dims
         x_axis, asc_content = self.load_asc_file(os.path.join(file_dir, 'test_image.asc'))
         x_axis = x_axis[0:151]
@@ -59,23 +59,23 @@ class TestSIFFile(TestCase):
     def test_xarray_export_spectrum(self):
         from sifreader.sifreader import SIFFile
         sif_file = SIFFile(os.path.join(file_dir, 'test_spectrum.sif'))
-        array = sif_file.as_xarray_dataframe()
+        array = sif_file.as_xarray()
         assert tuple(['wavelength', 'y']) == array.dims
         x_axis, asc_content = self.load_asc_file(os.path.join(file_dir, 'test_spectrum.asc'))
         x_axis = x_axis[0:151]
         assert (np.abs(x_axis - array.wavelength.values) < 1e-5).all()
         assert (array.values == asc_content).all()
-        array = sif_file.as_xarray_dataframe('photon_energy')
+        array = sif_file.as_xarray('photon_energy')
         assert tuple(['photon_energy', 'y']) == array.dims
         assert (np.abs(1239.84 / x_axis[::-1] - array.photon_energy.values) < 1e-5).all()
-        array = sif_file.as_xarray_dataframe('wavenumber')
+        array = sif_file.as_xarray('wavenumber')
         assert tuple(['wavenumber', 'y']) == array.dims
         assert (np.abs(1e7 / x_axis[::-1] - array.wavenumber.values) < 1e-4).all()
 
     def test_xarray_export_sequence(self):
         from sifreader.sifreader import SIFFile
         sif_file = SIFFile(os.path.join(file_dir, 'test_sequence.sif'))
-        array = sif_file.as_xarray_dataframe()
+        array = sif_file.as_xarray()
         assert tuple(['x', 'y', 'frames']) == array.dims
         x_axis, asc_content = self.load_asc_file(os.path.join(file_dir, 'test_sequence.asc'))
         x_axis = x_axis[0:151]

@@ -52,7 +52,7 @@ class SIFFile(object):
                 ('Cycle Time', '{:f}'.format(self.cycletime)),
                 ('Number of accumulations', '{:d}'.format(self.accumulations)),
                 ('Pixel Readout Rate (MHz)', '{:f}'.format(self.readout)),
-                ("Horizontal Camera Resolution",'{:d}'.format(self.xres)),
+                ("Horizontal Camera Resolution", '{:d}'.format(self.xres)),
                 ("Vertical Camera Resolution", '{:d}'.format(self.yres)),
                 ("Image width", '{:d}'.format(self.width)),
                 ("Image Height", '{:d}'.format(self.height)),
@@ -175,7 +175,7 @@ class SIFFile(object):
         f.close()
         return data.reshape(self.stacksize, self.height, self.width)
 
-    def as_xarray_dataframe(self, x_axis_quantity='wavelength'):
+    def as_xarray(self, x_axis_quantity='wavelength'):
         """
         Returns an xarray.DataArray object containing all frames, all metadata and all coordinate axis values. If the
         file contains a spectrum, the wavelength axis can be converted to wavenumbers or photon energy.  This method
