@@ -9,9 +9,39 @@ import numpy as np
 
 
 class SIFFile(object):
+    """
+    A class that reads the contents and metadata of an Andor .sif file. Compatible with images as well as spectra.
+    Exports data as numpy array or xarray.DataArray.
+
+    Example: SIFFile('my_spectrum.sif').read_all()
+
+    In addition to the raw data, SIFFile objects provide a number of meta data variables:
+    :ivar x_axis: the horizontal axis (can be pixel numbers or wavelength in nm)
+    :ivar original_filename: the original file name of the .sif file
+    :ivar date: the date the file was recorded
+    :ivar model: camera model
+    :ivar temperature: sensor temperature in degrees Celsius
+    :ivar exposuretime: exposure time in seconds
+    :ivar cycletime: cycle time in seconds
+    :ivar accumulations: number of accumulations
+    :ivar readout: pixel readout rate in MHz
+    :ivar xres: horizontal resolution
+    :ivar yres: vertical resolution
+    :ivar width: image width
+    :ivar height: image height
+    :ivar xbin: horizontal binning
+    :ivar ybin: vertical binning
+    :ivar gain: EM gain level
+    :ivar vertical_shift_speed: vertical shift speed
+    :ivar pre_amp_gain: pre-amplifier gain
+    :ivar stacksize: number of frames
+    :ivar filesize: size of the file in bytes
+    :ivar m_offset: offset in the .sif file to the actual data
+    """
+
     def __init__(self, filepath):
         self.filepath = filepath
-        self.read_header(filepath)
+        self._read_header(filepath)
 
     def __repr__(self):
         info = (('Original Filename', self.original_filename),
@@ -42,8 +72,7 @@ class SIFFile(object):
         res = super().__repr__() + '\n' + res
         return res
 
-    def read_header(self, filepath):
-
+    def _read_header(self, filepath):
         f = open(filepath, 'rb')
         headerlen = 32
         spool = 0
@@ -119,9 +148,14 @@ class SIFFile(object):
         self.datasize = self.width * self.height * 4 * self.stacksize
         self.m_offset = self.filesize - self.datasize - 8
 
-        self.wavelength_axis = np.polyval(self.wavelength_coefficients, np.arange(self.left, self.right + 1))
+        self.x_axis = np.polyval(self.wavelength_coefficients, np.arange(self.left, self.right + 1))
 
     def read_block(self, num=0):
+        """
+        Returns a specific block (i.e. frame) in the .sif file as a numpy array.
+        :param num: block number
+        :return: a numpy array with shape (y, x)
+        """
         f = open(self.filepath, 'rb')
         f.seek(self.m_offset + num * self.width * self.height * 4)
         block = f.read(self.width * self.height * 4)
@@ -130,6 +164,10 @@ class SIFFile(object):
         return data.reshape(self.height, self.width)
 
     def read_all(self):
+        """
+        Returns all blocks (i.e. frames) in the .sif file as a numpy array.
+        :return: a numpy array with shape (blocks, y, x)
+        """
         f = open(self.filepath, 'rb')
         f.seek(self.m_offset)
         block = f.read(self.width * self.height * self.stacksize * 4)
@@ -137,44 +175,61 @@ class SIFFile(object):
         f.close()
         return data.reshape(self.stacksize, self.height, self.width)
 
-    def as_xarray_dataframe(self, x_axis_quantity='photon_energy'):
+    def as_xarray_dataframe(self, x_axis_quantity='wavelength'):
+        """
+        Returns an xarray.DataArray object containing all frames, all metadata and all coordinate axis values. If the
+        file contains a spectrum, the wavelength axis can be converted to wavenumbers or photon energy.  This method
+        requires the xarray package to be installed.
+        :param x_axis_quantity: Only relevant for spectra. Can be either 'wavelength' (default), 'wavenumber' or \
+        'photon energy'.
+        :return: An xarray.DataArray containing the entire contents of the .sif file.
+        """
         try:
             import xarray as xr
             data = self.read_all()
-            pixel_axis = np.arange(data.shape[1])
-            if x_axis_quantity == 'wavelength':
-                x_axis = self.wavelength_axis
-                x_unit = 'nm'
-                x_name = 'Wavelength'
-            elif x_axis_quantity == 'wavenumber':
-                x_axis = (10e7 / self.wavelength_axis)[::-1]
-                data = np.flip(data, 2)
-                x_unit = 'cm^-1'
-                x_name = 'Wavenumber'
-            elif x_axis_quantity == 'photon_energy':
-                x_axis = (1239.84 / self.wavelength_axis)[::-1]
-                data = np.flip(data, 2)
-                x_unit = 'eV'
-                x_name = 'Photon energy'
+            y_axis = np.arange(data.shape[1])
+            # determine if it's an image or a spectrum: check if the x_axis spacing is always one
+            if (np.abs((np.diff(self.x_axis) - 1)) < 1e-5).all():
+                # it's an image
+                x_axis = self.x_axis.astype(np.uint16)
+                x_axis_quantity = 'x'
+                x_unit = 'px'
+                x_name = 'x'
             else:
-                raise RuntimeError('X-axis quantity "{}" not recognized!'.format(x_axis_quantity))
+                # it's a spectrum
+                if x_axis_quantity == 'wavelength':
+                    x_axis = self.x_axis
+                    x_unit = 'nm'
+                    x_name = 'Wavelength'
+                elif x_axis_quantity == 'wavenumber':
+                    x_axis = (1e7 / self.x_axis)[::-1]
+                    data = np.flip(data, 2)
+                    x_unit = 'cm^-1'
+                    x_name = 'Wavenumber'
+                elif x_axis_quantity == 'photon_energy':
+                    x_axis = (1239.84 / self.x_axis)[::-1]
+                    data = np.flip(data, 2)
+                    x_unit = 'eV'
+                    x_name = 'Photon energy'
+                else:
+                    raise RuntimeError('X-axis quantity "{}" not recognized!'.format(x_axis_quantity))
+
             if data.shape[0] == 1:
                 # Only one frame
                 data = np.transpose(data[0])
-                data_array = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('pixels', pixel_axis)],
+                data_array = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('y', y_axis)],
                                     name='intensity')
             else:
                 # multiple frames
                 frame_axis = np.arange(data.shape[0])
                 data = np.transpose(data, [2, 1, 0])
-                data_array = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('pixels', pixel_axis),
+                data_array = xr.DataArray(data, coords=[(x_axis_quantity, x_axis), ('y', y_axis),
                                                   ('frames', frame_axis)], name='intensity')
                 data_array.frames.attrs['long_name'] = 'Frame number'
 
             data_array.attrs['long_name'] = 'Intensity'
             data_array.attrs['units'] = 'arb. u.'
-            data_array.pixels.attrs['long_name'] = 'y'
-            data_array.pixels.attrs['units'] = 'px'
+            data_array.y.attrs['units'] = 'px'
             data_array[x_axis_quantity].attrs['long_name'] = x_name
             data_array[x_axis_quantity].attrs['units'] = x_unit
             data_array.attrs['sif_metadata'] = str(self)
