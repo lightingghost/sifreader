@@ -57,8 +57,10 @@ For spectra: make a `DataArray` that contains the photon energy in eV rather tha
 >spectrum_file = SIFFile('my_spectrum.sif')
 >xarr = spectrum_file.as_xarray('photon_energy')
 ```
+The options for this method are 'wavelength' (default), 'wavenumber' and 'photon_energy'. Note, that this only makes a difference
+if the file contains a spectrum. For images, both axes will always contain the pixel numbers.
 
-One of the nice features of `DataArray` is the ability to easily select data and plot it:
+One of the nice features of `DataArray` is the ability to easily select data and plot it in a single line:
 ```python
 spectrum_file.as_xarray().sel(frames=0, wavelength=slice(749.5, 768.2)).plot()
 ```
