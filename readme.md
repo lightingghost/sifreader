@@ -24,7 +24,7 @@ Install with `pip`:
 
 Open a file and print the metadata:
 
-```python
+```
 >file = SIFFile('my_image.sif')
 >print(file)
 <sifreader.sifreader.sifreader.SIFFile object at 0x30f9eecc0>
@@ -34,23 +34,33 @@ Date:                          Thu May 10 12:01:48 2018
 ```
 
 Read a single or all frames contained in the file as numpy arrays:
-```python
+```
 >first_frame = file.read_block(0)
 >all_frames = file.read_all()
 ```
 
+The horizontal axis is contained in the `x_axis` member variable. If the file contains a spectrum, the axis will be
+the wavelength in namometers, otherwise it will contain the pixel numbers:
+```
+>wavelengths = file.x_axis
+```
+
+### With the optional xarray package
+
 Read all frames in the file as a `DataArray`:
-```python
+```
 >xarr = file.as_xarray()
 ```
 
 For spectra: make a `DataArray` that contains the photon energy in eV rather than the default wavelength:
-```python
+```
 >spectrum_file = SIFFile('my_spectrum.sif')
 >xarr = spectrum_file.as_xarray('photon_energy')
 ```
+The options for this method are 'wavelength' (default), 'wavenumber' and 'photon_energy'. Note, that this only makes a difference
+if the file contains a spectrum. For images, both axes will always contain the pixel numbers.
 
-One of the nice features of `DataArray` is the ability to easily select data and plot it:
+One of the nice features of `DataArray` is the ability to easily select data and plot it in a single line:
 ```python
 spectrum_file.as_xarray().sel(frames=0, wavelength=slice(749.5, 768.2)).plot()
 ```
