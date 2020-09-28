@@ -1,3 +1,9 @@
+# NOT MAINTAINED
+
+As raised in several issuses, this package is not able to read newer versions of Andor sif files.
+The author(s) do not have access to newer versions to sif files. Therefore this project is no longer
+maintained. Please feel free to contact the author(s) if you would like to take the ownership.
+
 # SIF Reader
 
 This package is designed to read Andor SIF image file.
